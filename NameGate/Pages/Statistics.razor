@@ -1,0 +1,132 @@
+﻿@page "/statistics"
+
+@using NameGate.Database.Entities
+@using System.Net
+
+@inject StatisticsService Stats
+@inject HostNameResolver Resolver
+@inject ILogger<Statistics> Logger
+
+<h3>Statistics</h3>
+
+<MudTable T="HostStatistics" ServerData="GetIpStats" Dense="true" Hover="true">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Host Query Statistics</MudText>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh><MudTableSortLabel SortLabel="hostname" T="HostStatistics">Hostname</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="ipaddress" T="HostStatistics">IP Address</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="blocked" T="HostStatistics" InitialDirection="SortDirection.Descending">Blocked</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="allowed" T="HostStatistics">Allowed</MudTableSortLabel></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Hostname">
+            @if(context.Hostname != null)
+            {
+                @context.Hostname
+            }
+            else
+            {
+                <i>Unknown</i>
+            }
+        </MudTd>
+        <MudTd DataLabel="IpAddress">@context.IpAddress</MudTd>
+        <MudTd DataLabel="Blocked">@context.BlockedCount</MudTd>
+        <MudTd DataLabel="Allowed">@context.AllowedCount</MudTd>
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText>No matching records found</MudText>
+    </NoRecordsContent>
+    <LoadingContent>
+        <MudText>Loading...</MudText>
+    </LoadingContent>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+<MudTable T="DomainStatisticsEntity" ServerData="GetDomainStats" Dense="true" Hover="true">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Domain Query Statistics</MudText>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh><MudTableSortLabel SortLabel="domain" T="DomainStatisticsEntity">Host</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="blocked" T="DomainStatisticsEntity" InitialDirection="SortDirection.Descending">Blocked</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="allowed" T="DomainStatisticsEntity">Allowed</MudTableSortLabel></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Host">@context.Domain</MudTd>
+        <MudTd DataLabel="Blocked">@context.BlockedCount</MudTd>
+        <MudTd DataLabel="Allowed">@context.AllowedCount</MudTd>
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText>No matching records found</MudText>
+    </NoRecordsContent>
+    <LoadingContent>
+        <MudText>Loading...</MudText>
+    </LoadingContent>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+
+@code {
+
+    private async Task<TableData<HostStatistics>> GetIpStats(TableState state)
+    {
+        var q = Stats.GetIpStatistics().Select(x => new HostStatistics(GetHostString(x.IpAddress), x.IpAddress, x.AllowedCount, x.BlockedCount));
+
+        var isAscending = state.SortDirection != SortDirection.Descending;
+
+        q = state.SortLabel switch
+        {
+            "hostname" => isAscending ? q.OrderBy(x => x.Hostname) : q.OrderByDescending(x => x.Hostname),
+            "ipaddress" => isAscending ? q.OrderBy(x => x.IpAddress) : q.OrderByDescending(x => x.IpAddress),
+            "blocked" => isAscending ? q.OrderBy(x => x.BlockedCount) : q.OrderByDescending(x => x.BlockedCount),
+            "allowed" => isAscending ? q.OrderBy(x => x.AllowedCount) : q.OrderByDescending(x => x.AllowedCount),
+            _  => q
+        };
+
+        q = q.Skip(state.Page * state.PageSize).Take(state.PageSize);
+
+        return new TableData<HostStatistics>()
+        {
+            Items = await q.ToListAsync(),
+            TotalItems = await Stats.GetIpStatistics().CountAsync()
+        };
+    }
+
+    private async Task<TableData<DomainStatisticsEntity>> GetDomainStats(TableState state)
+    {
+        var q = Stats.GetDomainStatistics();
+
+        var isAscending = state.SortDirection != SortDirection.Descending;
+
+        q = state.SortLabel switch
+        {
+            "domain" => isAscending ? q.OrderBy(x => x.Domain) : q.OrderByDescending(x => x.Domain),
+            "blocked" => isAscending ? q.OrderBy(x => x.BlockedCount) : q.OrderByDescending(x => x.BlockedCount),
+            "allowed" => isAscending ? q.OrderBy(x => x.AllowedCount) : q.OrderByDescending(x => x.AllowedCount),
+            _ => q
+        };
+
+        q = q.Skip(state.Page * state.PageSize).Take(state.PageSize);
+
+        return new TableData<DomainStatisticsEntity>()
+        {
+            Items = await q.ToListAsync(),
+            TotalItems = await Stats.GetIpStatistics().CountAsync()
+        };
+    }
+
+    private string? GetHostString(string ipAddress)
+    {
+        if (!IPAddress.TryParse(ipAddress, out var address))
+            return null;
+
+        return Resolver.GetHostEntry(address)?.HostName;
+    }
+
+    private record HostStatistics(string? Hostname, string IpAddress, ulong AllowedCount, ulong BlockedCount);
+}

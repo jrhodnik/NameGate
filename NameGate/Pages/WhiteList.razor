@@ -1,0 +1,75 @@
+﻿@page "/whitelist"
+
+@using GlobExpressions
+@using NameGate.Database.Entities
+@using NameGate.Database.Repositories
+
+<h3>WhiteList</h3>
+<p>
+    Whitelist certain domains that will not be blocked.
+    
+    <ul>
+        <li><code>someaddomain.com</code> would only allow queries for that specific domain.</li>
+        <li><code>*.someaddomain.com</code> would allow queries such as <code>asdf.someaddomain.com</code>, <code>jkl.someaddomain.com</code>, etc.</li>
+        <li><code>*someaddomain.com</code> would allow the above, as well as names like <code>asdfsomeaddomain.com</code>.</li>
+    </ul>
+</p>
+
+@inject IWhiteListRepository Repository
+@inject ILogger<WhiteList> Logger
+ 
+<div style="display:flex;">
+    <MudTextField Label="Add WhiteListed Domain" @bind-Value="_newDomainGlob" Placeholder="*mydomain.com" /> <MudButton  StartIcon="@Icons.Material.Filled.Add" @onclick="AddDomainGlob">Add</MudButton>
+</div>
+
+<div>
+    @foreach(var wl in _whiteList)
+    {
+        <div>@wl.DomainGlob <MudIconButton Icon="@Icons.Material.Filled.Delete" @onclick="() => RemoveDomainGlob(wl)">Remove</MudIconButton></div>
+    }
+</div>
+
+@code {
+    private IEnumerable<WhiteListEntryEntity> _whiteList = [];
+
+    private string _newDomainGlob = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshList();
+    }
+
+    private async Task AddDomainGlob()
+    {
+        try
+        {
+            _ = new Glob(_newDomainGlob); // to validate
+
+            await Repository.Add(new(Guid.NewGuid(), _newDomainGlob));
+            _newDomainGlob = string.Empty;
+            await RefreshList();
+        }
+        catch(Exception ex)
+        {
+            Logger.LogError(ex, "Error adding whitelist entry.");
+        }
+    }
+
+    public async Task RemoveDomainGlob(WhiteListEntryEntity domainGlob)
+    {
+        try
+        {
+            await Repository.Remove(domainGlob.Id);
+            await RefreshList();
+        }
+        catch(Exception ex)
+        {
+            Logger.LogError(ex, "Error removing domain glob.");
+        }
+    }
+
+    private async Task RefreshList()
+    {
+        _whiteList = await Repository.Get().ToListAsync();
+    }
+}

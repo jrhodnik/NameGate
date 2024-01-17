@@ -1,0 +1,3 @@
+[submodule "submodules/dns"]
+	path = submodules/dns
+	url = https://github.com/jrhodnik/dns.git

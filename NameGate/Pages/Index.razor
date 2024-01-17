@@ -1,0 +1,55 @@
+﻿@page "/"
+@using System.Diagnostics
+@using System.Net
+
+@inject BlockListManager BlockListManager
+@inject ISnackbar Snackbar
+@inject ILogger<Index> Logger
+
+<h1>Test Domain if Blacklisted</h1>
+
+<MudTextField @bind-Value="_domain" Placeholder="somedomain.com" OnKeyDown="OnKeyDown" />
+<MudButton @onclick="DoLookup">Lookup</MudButton>
+
+@if(_result != null)
+{
+    <div>
+        @if(_result.IsBlocked)
+        {
+            <h2>Domain is blocked</h2>
+            <p>Blocklist: @_result.BlockList?.GetType()?.Name</p>
+        }
+        else
+        {
+            <h2>Domain is not blocked</h2>
+        }
+        @if(_queryTime != null)
+        {
+            <div>Query took @(_queryTime.Value.TotalMilliseconds)ms to complete.</div>
+        }
+    </div>
+}
+
+@code {
+    private string _domain = string.Empty;
+    private DomainBlockResult? _result = null;
+    private TimeSpan? _queryTime = null;
+
+    private async Task DoLookup()
+    {
+        var sw = Stopwatch.StartNew();
+        try
+        {
+            _result = await BlockListManager.DomainIsBlocked(_domain, IPEndPoint.Parse("127.0.0.1"));
+        }
+        catch(Exception ex)
+        {
+            Snackbar.Add($"Error looking up domain: {ex.Message}", Severity.Error);
+            Logger.LogError(ex, "Error looking up domain.");
+        }
+
+        _queryTime = sw.Elapsed;
+    }
+
+    private Task OnKeyDown(KeyboardEventArgs e) => e.Key.Equals("Enter", StringComparison.OrdinalIgnoreCase) ? DoLookup() : Task.CompletedTask;
+}

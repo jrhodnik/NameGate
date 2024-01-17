@@ -1,0 +1,57 @@
+name: publish
+
+on:
+  push:
+    tags:
+      - '*'
+
+env:
+  AZURE_WEBAPP_NAME: DotNetWeb
+  AZURE_WEBAPP_PACKAGE_PATH: '.' # Set this to the path to your web app project, defaults to the repository root:
+  DOTNET_VERSION: '9' # The .NET SDK version to use
+
+jobs:
+  publish:
+    permissions: write-all
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        submodules: true
+    
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    - name: Install dependencies
+      run: dotnet restore
+      
+    - name: Install workloads
+      run: dotnet workload restore
+      
+    - name: Build
+      run: |
+        cd NameGate
+        dotnet build --configuration Release --no-restore
+        dotnet publish -c Release -o ../NameGate_linux-x64 -r linux-x64 -p:PublishSingleFile=true --self-contained true
+        dotnet publish -c Release -o ../NameGate_win-x64 -r win-x64 -p:PublishSingleFile=true --self-contained true
+        dotnet publish -c Release -o ../NameGate_linux-arm -r linux-arm -p:PublishSingleFile=true --self-contained true
+    
+    - name: Compress for Release
+      run: |
+        tar -czvf NameGate_linux-x64.tar.gz NameGate_linux-x64
+        tar -czvf NameGate_win-x64.tar.gz NameGate_win-x64
+        tar -czvf NameGate_linux-arm.tar.gz NameGate_linux-arm
+        
+    - name: Release with Notes
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          NameGate_linux-x64.tar.gz
+          NameGate_win-x64.tar.gz
+          NameGate_linux-arm.tar.gz
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

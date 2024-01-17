@@ -1,0 +1,80 @@
+﻿@page "/queries"
+@using System.Net
+
+@implements IDisposable
+
+@inject QueryLogger QueryLogger
+@inject HostNameResolver Resolver
+
+<MudTextField @bind-Value="_filter" Label="Filter by Host, IP, or Domain" Immediate="true" /> 
+<MudSelect @bind-Value="_blocked" Label="Blocked or not">
+    <MudSelectItem Value="(bool?)null">Don't Filter</MudSelectItem>
+    <MudSelectItem Value="(bool?)true">Blocked</MudSelectItem>
+    <MudSelectItem Value="(bool?)false">Allowed</MudSelectItem>
+</MudSelect>
+
+<MudTable Items="GetQueries().Take(100)" Hover="true" Breakpoint="Breakpoint.Sm">
+    <HeaderContent>
+        <MudTh>Timestamp</MudTh>
+        <MudTh>Blocked</MudTh>
+        <MudTh>Domain</MudTh>
+        <MudTh>Source</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Timestamp">@context.Timestamp</MudTd>
+        <MudTd DataLabel="Blocked">@(context.WasBlocked ? "Blocked" : "Allowed")</MudTd>
+        <MudTd DataLabel="Domain">@context.Response.Questions.FirstOrDefault()?.Name?.ToString()</MudTd>
+        <MudTd DataLabel="Source">@GetSourceString(context.Endpoint.Address)</MudTd>
+    </RowTemplate>
+</MudTable>
+
+    @code {
+    private string _filter = string.Empty;
+    private bool? _blocked = null;
+
+    protected override void OnInitialized()
+    {
+        QueryLogger.NewQueryLogged += OnNewQueryLogged;
+    }
+
+    private void OnNewQueryLogged(LoggedQuery q)
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        QueryLogger.NewQueryLogged -= OnNewQueryLogged;
+    }
+
+    private IEnumerable<LoggedQuery> GetQueries()
+    {
+        var ret = QueryLogger.GetQueries().OrderByDescending(x => x.Timestamp);
+
+        foreach (var res in ret)
+        {
+            if (!string.IsNullOrWhiteSpace(_filter))
+            {
+                var host = Resolver.GetHostEntry(res.Endpoint.Address);
+
+                var ipMatch = res.Endpoint.Address.ToString().Contains(_filter, StringComparison.OrdinalIgnoreCase);
+                var hostMatch = host != null && host.HostName.Contains(_filter, StringComparison.OrdinalIgnoreCase);
+                var domainMatch = res.Request.Questions.Any(x => x.Name.ToString().Contains(_filter, StringComparison.OrdinalIgnoreCase));
+
+                if (!ipMatch && !hostMatch && !domainMatch)
+                    continue;
+            }
+
+            if (_blocked != null && res.WasBlocked != _blocked)
+                continue;
+
+            yield return res;
+        }
+    }
+
+    private string GetSourceString(IPAddress addr)
+    {
+        var hostEntry = Resolver.GetHostEntry(addr);
+        return hostEntry == null ? addr.ToString() : $"{hostEntry.HostName} ({addr})";
+    }
+}
