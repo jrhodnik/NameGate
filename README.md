@@ -63,11 +63,11 @@ You can test queries against your NameGate instance using the `nslookup` command
 
 If all this goes well, you should have a functional NameGate instance that is ready for use. 
 
-## ⚒️ Running as a Service
-You can setup the NameGate executable to run as a service on both Linux and Windows
+# ⚒️ Running as a Service
+You can setup the NameGate executable to run as a service on both Linux and Windows.
 
-# 🐧 Linux (systemd)
-Place it in `/etc/systemd/system/namegate.service`, start it with `systemctl start namegate`, enable it to start at boot using `systemctl enable namegate`.
+## 🐧 Linux (systemd)
+Below is an example systemd service file. Place it in `/etc/systemd/system/namegate.service`, enable it to start at boot using `systemctl enable namegate`, and start it with `systemctl start namegate`.
 Make sure to change the paths below to match where you extracted the files.
 
 ```
@@ -88,8 +88,8 @@ ExecStart=/root/NameGate/NameGate --urls=http://0.0.0.0:80/
 WantedBy=multi-user.target
 ```
 
-# 🪟 Windows
-You create the service using the bit of powershell below. Make sure to change the path to match where you extracted the files.
+## 🪟 Windows
+Create the service using the bit of powershell below. Make sure to change the path to match where you extracted the files.
 ```
 $exePath = "C:\NameGate"
 New-Service -Name "NameGate" -BinaryPathName "$exePath/NameGate.exe --contentRoot $exePath --urls=http://0.0.0.0:80/" -Description "NameGate service" -DisplayName "NameGate" -StartupType Automatic
