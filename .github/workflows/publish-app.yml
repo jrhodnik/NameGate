@@ -39,12 +39,14 @@ jobs:
         dotnet publish -c Release -o ../NameGate_linux-x64 -r linux-x64 -p:PublishSingleFile=true --self-contained true
         dotnet publish -c Release -o ../NameGate_win-x64 -r win-x64 -p:PublishSingleFile=true --self-contained true
         dotnet publish -c Release -o ../NameGate_linux-arm -r linux-arm -p:PublishSingleFile=true --self-contained true
+        dotnet publish -c Release -o ../NameGate_linux-arm64 -r linux-arm64 -p:PublishSingleFile=true --self-contained true
     
     - name: Compress for Release
       run: |
         tar -czvf NameGate_linux-x64.tar.gz NameGate_linux-x64
         tar -czvf NameGate_win-x64.tar.gz NameGate_win-x64
         tar -czvf NameGate_linux-arm.tar.gz NameGate_linux-arm
+        tar -czvf NameGate_linux-arm64.tar.gz NameGate_linux-arm64
         
     - name: Release with Notes
       uses: softprops/action-gh-release@v1
@@ -53,5 +55,6 @@ jobs:
           NameGate_linux-x64.tar.gz
           NameGate_win-x64.tar.gz
           NameGate_linux-arm.tar.gz
+          NameGate_linux-arm64.tar.gz
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

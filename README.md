@@ -1,5 +1,5 @@
 ﻿# 🏷️ NameGate
-NameGate is a standalone, independent DNS blocking service similar to [Pi-hole](https://github.com/pi-hole/pi-hole). It supports running on both Linux and Windows. It is extremely easy to setup and deploy, and has a basic web UI that allows for whitelisting of domains, hosts, and exposes other features.
+NameGate is a standalone, independent DNS blocking service similar to [Pi-hole](https://github.com/pi-hole/pi-hole). It supports running on both Linux (including Raspberry Pi arm/arm64) and Windows. It is extremely easy to setup and deploy, and has a basic web UI that allows for whitelisting of domains, hosts, and exposes other features.
 
 ## ⚠️ Disclosure
 I wrote this project in a rage-filled frenzy after I couldn't Pi-hole to run in a Proxmox LXC container. It was largely written over the span of a few evenings and it has been running my home network for the last 6 months with no issues. Still, given the nature of the project and it's hasty creation, you probably shouldn't use it in a mission-critical situation.
