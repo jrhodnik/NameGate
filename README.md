@@ -5,7 +5,7 @@ NameGate is a standalone, independent DNS blocking service similar to [Pi-hole](
 I wrote this project in a rage-filled frenzy after I couldn't Pi-hole to run in a Proxmox LXC container. It was largely written over the span of a few evenings and it has been running my home network for the last 6 months with no issues. Still, given the nature of the project and it's hasty creation, you probably shouldn't use it in a mission-critical situation.
 
 ## 🥧 Versus Pi-hole
-What sets NameGate apart is that it doesn't rely on any external services such as FTL DNS, dnsmasq, lighthttpd, etc. All functionality is contained in one single executable, thus it is extremely easy to deploy and maintain.
+What sets NameGate apart is that it doesn't rely on any other system services or applications such as FTL DNS, dnsmasq, lighthttpd, etc. All functionality is contained in one single project, thus it is extremely easy to deploy and maintain.
 
 # 🧠 Features
 NameGate is a very simple project. It features a web interface that can do the following:
