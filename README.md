@@ -35,14 +35,25 @@ Currently, NameGate utilizes three block lists:
 Block lists automatically refreshed every 24 hours (configurable), and are cached on disk. 
 
 # ✅ Setup
-NameGate is quite simple to deploy. It can be ran standalone or as a service, however you choose. 
+NameGate is quite simple to deploy. It can be ran standalone or as a service, however you choose.
+
+## 🐋 Running with Docker
+Clone this repo and build with `docker build -t namegate .`. You can then start it with something like this:
+```
+docker run -p 8080:8080 -p 53:53/udp namegate --DnsServers:0=1.1.1.1 --DnsServers:1=1.0.0.1
+```
+This will start NameGate with the CloudFlare dns servers `1.1.1.1` and `1.0.0.1`. You can use the below to configure the service to run at startup as a daemon like so:
+```
+docker run -d --restart always -p 8080:8080 -p 53:53/udp namegate --DnsServers:0=1.1.1.1 --DnsServers:1=1.0.0.1
+```
+
 
 ## 📝 Configuration and Starting
 Download the latest binaries from the releases page, and extract to your desired location.
 
 Optionally modify `appsettings.json`, where you can configure which DNS servers are used to fulfill standard queries using the `DnsServers` array. 
 
-You can also configure `ReverseLookupServer` to a DNS server that is able to perform IP address reverse lookups, ie PTR record lookups. Doing so will show hostnames in the UI, and allow host bypassing by hostname. If left null, we will try with the first in `DnsServers`.
+You can also configure `ReverseLookupServer` (`--ReverseLookupServer=192.168.0.1` with Docker) to a DNS server that is able to perform IP address reverse lookups, ie PTR record lookups. Doing so will show hostnames in the UI, and allow host bypassing by hostname. If left null, we will try with the first in `DnsServers`.
 
 Launch the service using `./NameGate --urls=http://127.0.0.1:80/`.
 
